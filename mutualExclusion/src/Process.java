@@ -65,15 +65,40 @@ class Process {
     private static void readFile() throws IOException{
         BufferedReader br = new BufferedReader(new FileReader("text.txt"));
         try {
-            destineIp = br.readLine();
-            nickname = br.readLine();
-            waitTime = Integer.parseInt(br.readLine());
-
-            System.out.println(destineIp + " - " + nickname + " - " + waitTime);
+            
+            String currentLine, lastLine = "";
+            
+            while((currentLine = br.readLine()) != null){
+                lastLine = currentLine;
+            }
+            
+            if (lastLine != ""){
+                System.out.println("last line: " + lastLine);
+                executeOperation(lastLine);
+            }
+            
         }catch (Exception e){
-          
+            System.out.println("error reading the file");
         } finally {
             br.close();
+        }
+    }
+    
+    private static void executeOperation(String line){
+        System.out.println("executing operation");
+        
+        saveOperation(line);
+    }
+    
+    private static void saveOperation(String line){
+        System.out.println("saving operation");
+        
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("filename"))) {
+            
+            bw.write(line);
+        } catch (IOException e) {
+            System.out.println("error writing on file");
+            e.printStackTrace();
         }
     }
     
