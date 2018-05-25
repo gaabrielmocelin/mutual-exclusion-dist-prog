@@ -34,6 +34,8 @@ class Process {
         }
     }
     
+    
+    //CONTROL RESULTS FILE METHODS
     private static void readFile() throws IOException{
         BufferedReader br = new BufferedReader(new FileReader("text.txt"));
         try {
@@ -56,7 +58,27 @@ class Process {
         }
     }
     
-    private static void readProcessFile() throws IOException{
+    private static void executeOperation(String line){
+        System.out.println("executing operation");
+        
+        saveOperation(line);
+    }
+    
+    private static void saveOperation(String line){
+        System.out.println("saving operation");
+        
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("filename"))) {
+            
+            bw.write(line);
+        } catch (IOException e) {
+            System.out.println("error writing on file");
+            e.printStackTrace();
+        }
+    }
+    
+    //CONTROL PROCESS FILE METHODS
+    //THIS METHOD SHOULD BE ALWAYS RUNNING ON A SECONDARY THREAD
+       private static void readProcessFile() throws IOException{
         BufferedReader br = new BufferedReader(new FileReader("process.txt"));
         try {
             
@@ -90,25 +112,24 @@ class Process {
             br.close();
         }
     }
-    
-    private static void executeOperation(String line){
-        System.out.println("executing operation");
-        
-        saveOperation(line);
-    }
-    
-    private static void saveOperation(String line){
+       
+    private static void saveProcess(String line){
         System.out.println("saving operation");
         
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter("filename"))) {
-            
-            bw.write(line);
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("process.txt"))) {
+            bw.write(String.valueOf(myPort));
         } catch (IOException e) {
             System.out.println("error writing on file");
             e.printStackTrace();
         }
     }
     
+    private static void removeNextProcess(String line){
+        System.out.println("should remove the destine port because it does not exist anymore");
+    }
+    
+       
+    //CONTROL TOKEN METHODS
     private static boolean sendMessage(String message) throws Exception {
             byte[] sendData = message.getBytes();
             InetAddress destineAddress = InetAddress.getByName(destineIp);
