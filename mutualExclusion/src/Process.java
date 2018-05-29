@@ -24,14 +24,18 @@ class Process {
 
     public static void main(String args[]) throws Exception {
         token = "1234";
-        myPort = 9875;
-        destinePort = 9876;
+        myPort = 9876;
+        destinePort = 9877;
         destineIp = "127.0.0.1";
         clientSocket = new DatagramSocket(myPort);
         
         if (token != null){
             tokenReceived(token);    
         }
+        
+        saveProcess();
+        readProcessFile();
+        startListener();
     }
     
     
@@ -113,8 +117,8 @@ class Process {
         }
     }
        
-    private static void saveProcess(String line){
-        System.out.println("saving operation");
+    private static void saveProcess(){
+        System.out.println("saving process");
         
         try (BufferedWriter bw = new BufferedWriter(new FileWriter("process.txt"))) {
             bw.write(String.valueOf(myPort));
