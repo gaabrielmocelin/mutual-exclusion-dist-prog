@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 class Process {
 
@@ -23,18 +24,17 @@ class Process {
     }
 
     public static void main(String args[]) throws Exception {
-        token = "1234";
-        myPort = 9876;
-        destinePort = 9877;
         destineIp = "127.0.0.1";
+        token = null;
+        myPort = 9872;
+   
         clientSocket = new DatagramSocket(myPort);
         
         if (token != null){
             tokenReceived(token);    
         }
         
-        saveProcess();
-        readProcessFile();
+        updateDestinePortOf(myPort);
         startListener();
     }
     
@@ -82,7 +82,7 @@ class Process {
     
     //CONTROL PROCESS FILE METHODS
     //THIS METHOD SHOULD BE ALWAYS RUNNING ON A SECONDARY THREAD
-       private static void readProcessFile() throws IOException{
+       private static void updateDestinePortOf(int port) throws IOException{
         BufferedReader br = new BufferedReader(new FileReader("process.txt"));
         try {
             
@@ -97,8 +97,8 @@ class Process {
                     isFirstLine = false;
                 }
                 
-                int port = Integer.parseInt(currentLine);
-                if (port == myPort){
+                int possiblePort = Integer.parseInt(currentLine);
+                if (possiblePort == port){
                     
                     nextLine = br.readLine();
                     if (nextLine != null){
@@ -116,23 +116,7 @@ class Process {
             br.close();
         }
     }
-       
-    private static void saveProcess(){
-        System.out.println("saving process");
-        
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter("process.txt"))) {
-            bw.write(String.valueOf(myPort));
-        } catch (IOException e) {
-            System.out.println("error writing on file");
-            e.printStackTrace();
-        }
-    }
-    
-    private static void removeNextProcess(String line){
-        System.out.println("should remove the destine port because it does not exist anymore");
-    }
-    
-       
+           
     //CONTROL TOKEN METHODS
     private static boolean sendMessage(String message) throws Exception {
             byte[] sendData = message.getBytes();
@@ -144,8 +128,15 @@ class Process {
     
     private static void sendToken() throws Exception {
         String msg = "1234";
-        System.out.println("Enviando token");
-        sendMessage(msg);
+        System.out.println("port: " + myPort + " sending token");
+        //sendMessage(msg);
+        
+        Socket cliente = new Socket(destineIp, destinePort);
+        ObjectOutputStream saida = new ObjectOutputStream(cliente.getOutputStream());
+        saida.flush();
+        saida.writeObject(msg);
+        saida.close();
+        cliente.close();
         token = null;
     }
 
@@ -157,28 +148,25 @@ class Process {
         (new Thread() {
             @Override
             public void run() {
-                while (true) {
-                    DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                    try {
-                        clientSocket.receive(receivePacket);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    String modifiedSentence = new String(receivePacket.getData());
-                    System.out.println("DEBUGGGG Texto recebido do servidor:" + modifiedSentence);
-                    System.out.println("WAITING");
-                    try {
-                        Thread.sleep(waitTime * 1000);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    try {
-                        tokenReceived(modifiedSentence);
-                        receiveData = null;
-                        receiveData = new byte[1024];
-                    } catch (Exception ex) {
-                        Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                try {
+                    // Instancia o ServerSocket ouvindo a porta 12345
+                    ServerSocket servidor = new ServerSocket(myPort);
+                    while(true) {
+                        Socket cliente = servidor.accept();
+                        ObjectInputStream entrada = new ObjectInputStream(cliente.getInputStream());
+                        
+                        String msg = (String) entrada.readObject();
+                        System.out.println(msg + "received on port: " + myPort);
+                        System.out.println("*************");
+                        
+                        tokenReceived(msg);
+                        
+                        entrada.close();
+                        cliente.close();
+                  }  
+                }   
+                catch(Exception e) {
+                   System.out.println("Erro: " + e.getMessage());
                 }
             }
         }).start();
@@ -187,7 +175,8 @@ class Process {
     private static void tokenReceived(String msg) throws Exception {
        token = msg;
        
-       readFile();
+       //readFile();
+       TimeUnit.MINUTES.sleep(1);
        
        sendToken();
     }
