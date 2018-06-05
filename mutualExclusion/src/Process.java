@@ -10,6 +10,7 @@ class Process {
     private static int destinePort;
     private static int myPort;
     private static String token;
+    private static Timer timeOut = new Timer();
 
     public Process() {
 
@@ -20,11 +21,31 @@ class Process {
         myPort = 9872;
 //        token = null;
 //        myPort = 9871;
+//        token = null;
+//        myPort = 9873;
 
         updateDestinePortOf(myPort);
-        System.out.println("dest" + destinePort);
         startListener();
         startReadFile();
+        if (token != null) {
+            tokenReceived(token);
+        }
+    }
+    
+    private static void resetTimeOut() {
+        timeOut.cancel();
+        timeOut.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("Run election ");
+            }
+        }, 20000);
+    }
+    
+    private static void restartToken() throws Exception {
+        token = "1234";
+        TimeUnit.SECONDS.sleep(1);
+        updateDestinePortOf(myPort);
         if (token != null) {
             tokenReceived(token);
         }
@@ -138,6 +159,11 @@ class Process {
             saida.flush();
             saida.writeObject(msg);
             saida.close();
+        } catch(Exception e) {
+            updateDestinePortOf(destinePort);
+            if (destinePort != myPort) {
+                sendToken();
+            }
         }
         token = null;
     }
@@ -176,8 +202,10 @@ class Process {
     }
 
     private static void tokenReceived(String msg) throws Exception {
+        resetTimeOut();
         token = msg;
 
+        TimeUnit.SECONDS.sleep(5);
         sendToken();
     }
 }
